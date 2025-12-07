@@ -12,7 +12,7 @@ export const bookingsService = {
     const { customer_id, vehicle_id, rent_start_date, rent_end_date } = payload;
     const cid = requester.role === "customer" ? requester.id : customer_id;
     if (!cid || !vehicle_id || !rent_start_date || !rent_end_date) throw new Error("All fields required");
-    // check vehicle available
+    
     const vq = `SELECT id,daily_rent_price,availability_status,vehicle_name FROM vehicles WHERE id = $1`;
     const vr = await db.query(vq, [vehicle_id]);
     if (vr.rows.length === 0) throw new Error("Vehicle not found");
@@ -24,7 +24,7 @@ export const bookingsService = {
     const iq = `INSERT INTO bookings (customer_id,vehicle_id,rent_start_date,rent_end_date,total_price,status)
       VALUES ($1,$2,$3,$4,$5,'active') RETURNING id,customer_id,vehicle_id,rent_start_date,rent_end_date,total_price,status`;
     const ir = await db.query(iq, [cid, vehicle_id, rent_start_date, rent_end_date, total]);
-    // update vehicle status
+   
     await db.query(`UPDATE vehicles SET availability_status='booked' WHERE id = $1`, [vehicle_id]);
     const created = ir.rows[0];
     created.vehicle = { vehicle_name: vehicle.vehicle_name, daily_rent_price: vehicle.daily_rent_price };
@@ -57,7 +57,7 @@ export const bookingsService = {
     if (!status) throw new Error("status required");
 
     if (status === "cancelled") {
-      // only customer who booked can cancel before start date (simple check)
+      
       if (requester.role === "customer" && requester.id !== booking.customer_id) throw new Error("Forbidden");
       const today = new Date().toISOString().slice(0,10);
       if (today >= booking.rent_start_date) throw new Error("Cannot cancel on or after start date");
@@ -68,7 +68,7 @@ export const bookingsService = {
     }
 
     if (status === "returned") {
-      // only admin can mark returned
+      
       if (requester.role !== "admin") throw new Error("Forbidden");
       await db.query(`UPDATE bookings SET status='returned' WHERE id = $1`, [id]);
       await db.query(`UPDATE vehicles SET availability_status='available' WHERE id = $1`, [booking.vehicle_id]);

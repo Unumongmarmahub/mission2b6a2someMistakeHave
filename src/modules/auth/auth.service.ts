@@ -1,4 +1,4 @@
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { db } from "../../config/db";
 
@@ -24,7 +24,20 @@ export const authService = {
     const user = r.rows[0];
     const match = await bcrypt.compare(password, user.password);
     if (!match) throw new Error("Invalid credentials");
-    const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET as string, { expiresIn: "7d" });
-    return { token, user: { id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role } };
-  }
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "7d" }
+    );
+    return {
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+      },
+    };
+  },
 };
